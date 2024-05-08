@@ -4,6 +4,29 @@ import InputText from "./InputText";
 import UserLogin from "./UserLogin";
 import { serverTimestamp } from "firebase/firestore";
 
+// import WhatsApp from "whatsapp";
+
+// const senderNumber = 12345678901234567890;
+// const wa = new WhatsApp();
+
+// function custom_callback(statusCode, headers, body, resp, err) {
+//   console.log(
+//     `Incoming webhook status code: ${statusCode}\n\nHeaders:
+//         ${JSON.stringify(headers)}\n\nBody: ${JSON.stringify(body)}`
+//   );
+
+//   if (resp) {
+//     resp.writeHead(200, { "Content-Type": "text/plain" });
+//     resp.end();
+//   }
+
+//   if (err) {
+//     console.log(`ERROR: ${err}`);
+//   }
+// }
+
+// wa.webhooks.start(custom_callback);
+
 export default function ChatContainer() {
   // let socketio = socketIOClient("http://localhost:5001");
   const [chats, setChats] = useState([]);
@@ -59,6 +82,8 @@ export default function ChatContainer() {
   }
 
   function addMessage(chat) {
+    console.log(`test 01 ${chat}`);
+
     const newChat = { ...chat, user: user, avatar };
     // addToFirrebase(chat);
     setChats([...chats, newChat]);
