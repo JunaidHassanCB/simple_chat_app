@@ -5,10 +5,12 @@ const port = 3001;
 let messages = [];
 
 app.get("/webhook/messages", (req, res) => {
+  console.log(`messages: ${Json.stringify(messages)}`);
+
   res.status(200).json(messages);
 });
 
-// should also try post
+// should also try post and get
 app.post("/webhook/listener", (req, res) => {
   // explaination
   // https://developers.facebook.com/docs/messenger-platform/getting-started/webhook-setup/
@@ -21,6 +23,8 @@ app.post("/webhook/listener", (req, res) => {
       console.log("WEBHOOK_VERIFIED");
 
       // res.status(200).send(challenge);
+      console.log(`body: ${Json.stringify(req.body)}`);
+
       messages.push(req.body);
       res.status(200).send("Done");
     } else {
