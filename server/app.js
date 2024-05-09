@@ -34,24 +34,65 @@ app.use(
 ); // support encoded bodies
 
 // global variables
-let messages = [];
+const messages = [];
 
 app.get("/", (req, res) => {
   res.status(200).send("Server is up and running");
 });
 
+// This returns a database of messages
 app.get("/messages", (req, res) => {
   res.status(200).json(messages);
+});
+
+// Initiate conversation with a template message
+app.post("/init_conv", (req, res) => {
+  // axios request to template
+
+  res.status(200);
+});
+
+// Send a message when the conversation session has been initiated
+app.post("/message", (req, res) => {
+  // axios request to text message
+
+  res.status(200);
 });
 
 // This runs when an event happens like user sends message
 app.post("/webhook", customParser, (req, res) => {
   console.log(`post => /webhook`);
 
-  const body = req.body;
-  messages.push(body);
+  const body = req?.body;
 
-  res.status(200);
+  if (body && body.object === "whatsapp_business_account") {
+    const sender_id =
+      body?.entry[0]?.changes[0]?.value?.metadata?.display_phone_number;
+    const receiver_id = body?.entry[0]?.changes[0]?.value?.contacts[0]?.wa_id;
+
+    const message = body?.entry[0]?.changes[0]?.value?.messages[0];
+    const message_text = message?.text?.body;
+    const message_id = message?.id;
+    const message_timestamp = message?.timestamp;
+    const message_type = message?.type;
+
+    const message_obj = {
+      sender_id,
+      receiver_id,
+      message_text,
+      message_id,
+      message_timestamp,
+      message_type,
+    };
+
+    if (!messages.some((obj) => obj.message_id === message_obj.message_id)) {
+      messages.push(message_obj);
+    }
+
+    res.status(200);
+  }
+
+  res.status(400);
 });
 
 // This only works once, when we are initializing the server
