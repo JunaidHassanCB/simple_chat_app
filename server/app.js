@@ -37,7 +37,7 @@ app.use(
 ); // support encoded bodies
 
 // global variables
-const messages = [];
+const messages = {};
 
 app.get("/", (req, res) => {
   res.status(200).send("Server is up and running");
@@ -97,8 +97,6 @@ app.post("/init-conv", async (req, res) => {
     },
   });
 
-  console.log(response);
-
   const responseData = response?.data;
 
   if (!responseData?.messages) {
@@ -127,7 +125,11 @@ app.post("/init-conv", async (req, res) => {
     message_type,
   };
 
-  messages.push(message_obj);
+  const convId = Utils.getConvId(sender_id, receiver_id);
+
+  messages[convId]
+    ? messages[convId].push(message_obj)
+    : (messages[convId] = [message_obj]);
 
   res.status(200).json(message_obj);
 });
@@ -156,8 +158,6 @@ app.post("/message", async (req, res) => {
     },
   });
 
-  console.log(response);
-
   const responseData = response?.data;
 
   if (!responseData?.messages) {
@@ -182,7 +182,11 @@ app.post("/message", async (req, res) => {
     message_type,
   };
 
-  messages.push(message_obj);
+  const convId = Utils.getConvId(sender_id, receiver_id);
+
+  messages[convId]
+    ? messages[convId].push(message_obj)
+    : (messages[convId] = [message_obj]);
 
   res.status(200).json(message_obj);
 });
@@ -192,8 +196,6 @@ app.post("/webhook", customParser, (req, res) => {
   console.log(`post => /webhook`);
 
   const body = req?.body;
-
-  console.log(JSON.stringify(body));
 
   if (body && body.object === "whatsapp_business_account") {
     const receiver_id =
@@ -220,12 +222,16 @@ app.post("/webhook", customParser, (req, res) => {
         message_type,
       };
 
-      const doesMessageExist = messages.some(
+      const convId = Utils.getConvId(sender_id, receiver_id);
+
+      const doesMessageExist = messages[convId].some(
         (obj) => obj.message_id === message_obj.message_id
       );
 
       if (!doesMessageExist) {
-        messages.push(message_obj);
+        messages[convId]
+          ? messages[convId].push(message_obj)
+          : (messages[convId] = [message_obj]);
       }
 
       res.status(200);
