@@ -1,7 +1,8 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const axios = require("axios");
-const Utils = require('./utils/utils.js');
+const Utils = require("./utils/utils.js");
+require("dotenv").config();
 
 const app = express();
 
@@ -49,19 +50,6 @@ app.get("/messages", (req, res) => {
 
 // Initiate conversation with a template message
 app.post("/init-conv", async (req, res) => {
-  // Extract the Authorization header
-  const authHeader = req.headers["authorization"];
-
-  // Check if the Authorization header is present and formatted correctly
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res
-      .status(401)
-      .json({ error: "No token provided or token is invalid" });
-  }
-
-  // Extract the token from the Authorization header
-  const token = authHeader.split(" ")[1];
-
   // axios request to template
   const { to, templateName, headerValues, bodyValues } = req.body;
 
@@ -105,7 +93,7 @@ app.post("/init-conv", async (req, res) => {
     },
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${process.env.ACCESS_TOKEN}`,
     },
   });
 
@@ -147,20 +135,6 @@ app.post("/init-conv", async (req, res) => {
 // Send a message when the conversation session has been initiated
 app.post("/message", async (req, res) => {
   // axios request to text message
-
-  // Extract the Authorization header
-  const authHeader = req.headers["authorization"];
-
-  // Check if the Authorization header is present and formatted correctly
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res
-      .status(401)
-      .json({ error: "No token provided or token is invalid" });
-  }
-
-  // Extract the token from the Authorization header
-  const token = authHeader.split(" ")[1];
-
   const { to, text } = req.body;
 
   const response = await axios({
@@ -178,7 +152,7 @@ app.post("/message", async (req, res) => {
     },
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${process.env.ACCESS_TOKEN}`,
     },
   });
 
@@ -270,7 +244,7 @@ app.get("/webhook", (req, res) => {
   const token = req.query["hub.verify_token"];
 
   if (mode && token) {
-    if (mode === "subscribe" && token) {
+    if (mode === "subscribe" && token === process.env.VERIFY_TOKEN) {
       console.log("WEBHOOK_VERIFIED");
 
       // we must send this response otherwise the request will not be validated
