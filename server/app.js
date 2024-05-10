@@ -1,5 +1,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
+const axios = require("axios");
+const Utils = require('./utils/utils.js');
 
 const app = express();
 
@@ -46,17 +48,169 @@ app.get("/messages", (req, res) => {
 });
 
 // Initiate conversation with a template message
-app.post("/init_conv", (req, res) => {
-  // axios request to template
+app.post("/init-conv", async (req, res) => {
+  // Extract the Authorization header
+  const authHeader = req.headers["authorization"];
 
-  res.status(200);
+  // Check if the Authorization header is present and formatted correctly
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res
+      .status(401)
+      .json({ error: "No token provided or token is invalid" });
+  }
+
+  // Extract the token from the Authorization header
+  const token = authHeader.split(" ")[1];
+
+  // axios request to template
+  const { to, templateName, headerValues, bodyValues } = req.body;
+
+  const response = await axios({
+    method: "post",
+    url: "https://graph.facebook.com/v19.0/288356561034103/messages",
+    data: {
+      messaging_product: "whatsapp",
+      to: to,
+      type: "template",
+      template: {
+        name: templateName,
+        language: {
+          code: "en_US",
+        },
+        components: [
+          {
+            type: "header",
+            parameters: [
+              ...headerValues.map((value) => {
+                return {
+                  type: "text",
+                  text: value,
+                };
+              }),
+            ],
+          },
+          {
+            type: "body",
+            parameters: [
+              ...bodyValues.map((value) => {
+                return {
+                  type: "text",
+                  text: value,
+                };
+              }),
+            ],
+          },
+        ],
+      },
+    },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  console.log(response);
+
+  const responseData = response?.data;
+
+  if (!responseData?.messages) {
+    res.send(400).json({ error: "Message not sent" });
+    return;
+  }
+
+  // might be embeded in token
+  const sender_id = "15556116462";
+  const receiver_id = responseData?.contacts[0]?.wa_id;
+  const message_text = Utils.getTemplate(
+    templateName,
+    headerValues,
+    bodyValues
+  );
+  const message_id = responseData?.messages[0]?.id;
+  const message_timestamp = Math.floor(Date.now() / 1000);
+  const message_type = "text";
+
+  const message_obj = {
+    sender_id,
+    receiver_id,
+    message_text,
+    message_id,
+    message_timestamp,
+    message_type,
+  };
+
+  messages.push(message_obj);
+
+  res.status(200).json(message_obj);
 });
 
 // Send a message when the conversation session has been initiated
-app.post("/message", (req, res) => {
+app.post("/message", async (req, res) => {
   // axios request to text message
 
-  res.status(200);
+  // Extract the Authorization header
+  const authHeader = req.headers["authorization"];
+
+  // Check if the Authorization header is present and formatted correctly
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res
+      .status(401)
+      .json({ error: "No token provided or token is invalid" });
+  }
+
+  // Extract the token from the Authorization header
+  const token = authHeader.split(" ")[1];
+
+  const { to, text } = req.body;
+
+  const response = await axios({
+    method: "post",
+    url: "https://graph.facebook.com/v19.0/288356561034103/messages",
+    data: {
+      messaging_product: "whatsapp",
+      recipient_type: "individual",
+      // "to": "923017176099",
+      to: to,
+      type: "text",
+      text: {
+        body: text,
+      },
+    },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  console.log(response);
+
+  const responseData = response?.data;
+
+  if (!responseData?.messages) {
+    res.send(400).json({ error: "Message not sent" });
+    return;
+  }
+
+  // might be embeded in token
+  const sender_id = "15556116462";
+  const receiver_id = responseData?.contacts[0]?.wa_id;
+  const message_text = text;
+  const message_id = responseData?.messages[0]?.id;
+  const message_timestamp = Math.floor(Date.now() / 1000);
+  const message_type = "text";
+
+  const message_obj = {
+    sender_id,
+    receiver_id,
+    message_text,
+    message_id,
+    message_timestamp,
+    message_type,
+  };
+
+  messages.push(message_obj);
+
+  res.status(200).json(message_obj);
 });
 
 // This runs when an event happens like user sends message
@@ -65,31 +219,43 @@ app.post("/webhook", customParser, (req, res) => {
 
   const body = req?.body;
 
+  console.log(JSON.stringify(body));
+
   if (body && body.object === "whatsapp_business_account") {
-    const sender_id =
+    const receiver_id =
       body?.entry[0]?.changes[0]?.value?.metadata?.display_phone_number;
-    const receiver_id = body?.entry[0]?.changes[0]?.value?.contacts[0]?.wa_id;
+    const sender_id = body?.entry[0]?.changes[0]?.value?.contacts[0]?.wa_id;
 
-    const message = body?.entry[0]?.changes[0]?.value?.messages[0];
-    const message_text = message?.text?.body;
-    const message_id = message?.id;
-    const message_timestamp = message?.timestamp;
-    const message_type = message?.type;
+    const message_array = body?.entry[0]?.changes[0]?.value?.messages;
 
-    const message_obj = {
-      sender_id,
-      receiver_id,
-      message_text,
-      message_id,
-      message_timestamp,
-      message_type,
-    };
+    // This checks if the message_array is not empty which can mean the user is sending messages
+    if (message_array) {
+      const message = message_array[0];
 
-    if (!messages.some((obj) => obj.message_id === message_obj.message_id)) {
-      messages.push(message_obj);
+      const message_text = message?.text?.body;
+      const message_id = message?.id;
+      const message_timestamp = message?.timestamp;
+      const message_type = message?.type;
+
+      const message_obj = {
+        sender_id,
+        receiver_id,
+        message_text,
+        message_id,
+        message_timestamp,
+        message_type,
+      };
+
+      const doesMessageExist = messages.some(
+        (obj) => obj.message_id === message_obj.message_id
+      );
+
+      if (!doesMessageExist) {
+        messages.push(message_obj);
+      }
+
+      res.status(200);
     }
-
-    res.status(200);
   }
 
   res.status(400);
@@ -117,17 +283,19 @@ app.get("/webhook", (req, res) => {
 
 const port = process.env.PORT || 3001;
 
+// start the node server with "node app.js"
+// start the ngrok server with "ngrok http --domain=united-goblin-helping.ngrok-free.app 3001"
 app.listen(port, () => {
   console.log(`App is running at http://localhost:${port}`);
 
-  const ngrok = require("ngrok");
+  // const ngrok = require("ngrok");
 
-  ngrok
-    .connect(port)
-    .then((ngrokUrl) => {
-      console.log(`connected at port ${port} with ngrokUrl ${ngrokUrl}`);
-    })
-    .catch((error) => {
-      console.log(`could not connect to the tunnel ${error}`);
-    });
+  // ngrok
+  //   .connect(port)
+  //   .then((ngrokUrl) => {
+  //     console.log(`connected at port ${port} with ngrokUrl ${ngrokUrl}`);
+  //   })
+  //   .catch((error) => {
+  //     console.log(`could not connect to the tunnel ${error}`);
+  //   });
 });
