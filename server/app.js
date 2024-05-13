@@ -1,8 +1,3 @@
-// import express from "express";
-// import bodyParser from "body-parser";
-// import axios from "axios";
-// import Utils from "./utils/utils.js";
-
 const express = require("express");
 const bodyParser = require("body-parser");
 const axios = require("axios");
