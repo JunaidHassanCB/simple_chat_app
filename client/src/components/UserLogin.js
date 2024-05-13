@@ -25,23 +25,6 @@ export default function UserLogin({ setUserCallback }) {
   async function handleSetUser() {
     if (!user && !user.receiverPhone) return;
 
-    // set http request to start the conversation
-    const response = await axios({
-      method: "post",
-      url: "http://localhost:3001/init-conversations",
-      data: {
-        to: user.receiverPhone,
-        templateName: "citrus_bits_util",
-        headerValues: ["Obi Wan Kenobi"],
-        bodyValues: ["General Grievous", "the Empire", "demise"],
-      },
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!response) return;
-
     // update the user data at the frontend
     localStorage.setItem("user", user);
 

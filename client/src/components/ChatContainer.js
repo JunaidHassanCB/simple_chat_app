@@ -17,11 +17,9 @@ export default function ChatContainer() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
   const loadConversations = useCallback(async () => {
+    if (!user.senderPhone && !user.receiverPhone) return;
+
     const convId = Utils.getConvId(user.senderPhone, user.receiverPhone);
 
     const conversation = await axios({
@@ -33,6 +31,23 @@ export default function ChatContainer() {
     });
 
     setMessages([...conversation.data]);
+
+    if (conversation.data.length === 0) {
+      // set http request to start the conversation
+      const response = await axios({
+        method: "post",
+        url: "http://localhost:3001/init-conversations",
+        data: {
+          to: user.receiverPhone,
+          templateName: "citrus_bits_util",
+          headerValues: ["Obi Wan Kenobi"],
+          bodyValues: ["General Grievous", "the Empire", "demise"],
+        },
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    }
   }, [user.receiverPhone, user.senderPhone]);
 
   async function addMessage(chat) {
@@ -91,6 +106,10 @@ export default function ChatContainer() {
       </div>
     );
   }
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   useEffect(() => {
     loadConversations();
