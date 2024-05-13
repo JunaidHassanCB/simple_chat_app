@@ -1,7 +1,13 @@
+// import express from "express";
+// import bodyParser from "body-parser";
+// import axios from "axios";
+// import Utils from "./utils/utils.js";
+
 const express = require("express");
 const bodyParser = require("body-parser");
 const axios = require("axios");
 const Utils = require("./utils/utils.js");
+
 require("dotenv").config();
 
 const app = express();
@@ -37,19 +43,19 @@ app.use(
 ); // support encoded bodies
 
 // global variables
-const messages = {};
+const conversations = {};
 
 app.get("/", (req, res) => {
   res.status(200).send("Server is up and running");
 });
 
-// This returns a database of messages
-app.get("/messages", (req, res) => {
-  res.status(200).json(messages);
+// This returns a database of conversations
+app.get("/conversations", (req, res) => {
+  res.status(200).json(conversations);
 });
 
 // Initiate conversation with a template message
-app.post("/init-conv", async (req, res) => {
+app.post("/init-conversations", async (req, res) => {
   // axios request to template
   const { to, templateName, headerValues, bodyValues } = req.body;
 
@@ -127,9 +133,9 @@ app.post("/init-conv", async (req, res) => {
 
   const convId = Utils.getConvId(sender_id, receiver_id);
 
-  messages[convId]
-    ? messages[convId].push(message_obj)
-    : (messages[convId] = [message_obj]);
+  conversations[convId]
+    ? conversations[convId].push(message_obj)
+    : (conversations[convId] = [message_obj]);
 
   res.status(200).json(message_obj);
 });
@@ -184,9 +190,9 @@ app.post("/message", async (req, res) => {
 
   const convId = Utils.getConvId(sender_id, receiver_id);
 
-  messages[convId]
-    ? messages[convId].push(message_obj)
-    : (messages[convId] = [message_obj]);
+  conversations[convId]
+    ? conversations[convId].push(message_obj)
+    : (conversations[convId] = [message_obj]);
 
   res.status(200).json(message_obj);
 });
@@ -224,14 +230,14 @@ app.post("/webhook", customParser, (req, res) => {
 
       const convId = Utils.getConvId(sender_id, receiver_id);
 
-      const doesMessageExist = messages[convId].some(
+      const doesMessageExist = conversations[convId].some(
         (obj) => obj.message_id === message_obj.message_id
       );
 
       if (!doesMessageExist) {
-        messages[convId]
-          ? messages[convId].push(message_obj)
-          : (messages[convId] = [message_obj]);
+        conversations[convId]
+          ? conversations[convId].push(message_obj)
+          : (conversations[convId] = [message_obj]);
       }
 
       res.status(200);
