@@ -10,7 +10,8 @@ export default function ChatContainer() {
   // let socketio = socketIOClient("http://localhost:5001");
   const [messages, setMessages] = useState([]);
   const [user, setUser] = useState(localStorage.getItem("user"));
-  const avatar = localStorage.getItem("avatar");
+  const avatarLeft = localStorage.getItem("avatarLeft");
+  const avatarRight = localStorage.getItem("avatarRight");
   // const chatsRef = collection(db, "Messages");
   const messagesEndRef = useRef(null);
   const scrollToBottom = () => {
@@ -73,7 +74,8 @@ export default function ChatContainer() {
 
   function logout() {
     localStorage.removeItem("user");
-    localStorage.removeItem("avatar");
+    localStorage.removeItem("avatarLeft");
+    localStorage.removeItem("avatarRight");
     setUser("");
   }
 
@@ -91,7 +93,7 @@ export default function ChatContainer() {
                 <ChatBoxSender
                   key={index}
                   message={message.message_text}
-                  avatar={avatar}
+                  avatar={avatarLeft}
                   user={message.sender_id}
                 />
               );
@@ -99,8 +101,8 @@ export default function ChatContainer() {
               <ChatBoxReciever
                 key={index}
                 message={message.message_text}
-                avatar={avatar}
-                user={message.receiver_id}
+                avatar={avatarRight}
+                user={message.sender_id}
               />
             );
           })}

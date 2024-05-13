@@ -29,8 +29,14 @@ export default function UserLogin({ setUserCallback }) {
     localStorage.setItem("user", user);
 
     setUserCallback(user);
+
     localStorage.setItem(
-      "avatar",
+      "avatarLeft",
+      `https://picsum.photos/id/${_.random(1, 1000)}/200/300`
+    );
+
+    localStorage.setItem(
+      "avatarRight",
       `https://picsum.photos/id/${_.random(1, 1000)}/200/300`
     );
   }
