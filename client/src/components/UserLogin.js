@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { CommentOutlined } from "@ant-design/icons";
 import _ from "lodash";
+import axios from "axios";
 
 const button = {
   width: "10%",
@@ -14,21 +15,37 @@ const button = {
   margin: 10,
 };
 
-export default function UserLogin({ setUser }) {
-  const [user, setAUser] = useState({
+export default function UserLogin({ setUserCallback }) {
+  const [user, setUser] = useState({
     senderPhone: "15556116462",
     receiverPhone: "",
     userName: "Test User",
   });
 
-  function handleSetUser() {
-    console.log(user);
+  async function handleSetUser() {
+    if (!user && !user.receiverPhone) return;
 
-    if (!user) return;
+    // set http request to start the conversation
+    const response = await axios({
+      method: "post",
+      url: "http://localhost:3001/init-conversations",
+      data: {
+        to: user.receiverPhone,
+        templateName: "citrus_bits_util",
+        headerValues: ["Obi Wan Kenobi"],
+        bodyValues: ["General Grievous", "the Empire", "demise"],
+      },
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
 
+    if (!response) return;
+
+    // update the user data at the frontend
     localStorage.setItem("user", user);
-    
-    setUser(user);
+
+    setUserCallback(user);
     localStorage.setItem(
       "avatar",
       `https://picsum.photos/id/${_.random(1, 1000)}/200/300`
@@ -62,7 +79,7 @@ export default function UserLogin({ setUser }) {
           }}
           value={user.userName}
           onChange={(e) =>
-            setAUser((prev) => {
+            setUser((prev) => {
               return { ...prev, userName: e.target.value };
             })
           }
@@ -82,7 +99,7 @@ export default function UserLogin({ setUser }) {
           }}
           value={user.senderPhone}
           onChange={(e) =>
-            setAUser((prev) => {
+            setUser((prev) => {
               return { ...prev, senderPhone: e.target.value };
             })
           }
@@ -101,7 +118,7 @@ export default function UserLogin({ setUser }) {
           }}
           value={user.receiverPhone}
           onChange={(e) =>
-            setAUser((prev) => {
+            setUser((prev) => {
               return { ...prev, receiverPhone: e.target.value };
             })
           }
@@ -110,7 +127,7 @@ export default function UserLogin({ setUser }) {
       </div>
 
       <div style={{ display: "flex", justifyContent: "center" }}>
-        <button onClick={() => handleSetUser()} style={button}>
+        <button onClick={handleSetUser} style={button}>
           Login
         </button>
       </div>

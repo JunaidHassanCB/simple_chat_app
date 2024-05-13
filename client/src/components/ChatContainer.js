@@ -1,8 +1,10 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import ChatBoxReciever, { ChatBoxSender } from "./ChatBox";
 import InputText from "./InputText";
 import UserLogin from "./UserLogin";
 import { serverTimestamp } from "firebase/firestore";
+import axios from "axios";
+import Utils from "../utils/utils.js";
 
 // import WhatsApp from "whatsapp";
 
@@ -29,7 +31,7 @@ import { serverTimestamp } from "firebase/firestore";
 
 export default function ChatContainer() {
   // let socketio = socketIOClient("http://localhost:5001");
-  const [chats, setChats] = useState([]);
+  const [messages, setMessages] = useState([]);
   const [user, setUser] = useState(localStorage.getItem("user"));
   const avatar = localStorage.getItem("avatar");
   // const chatsRef = collection(db, "Messages");
@@ -40,11 +42,11 @@ export default function ChatContainer() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [chats]);
+  }, [messages]);
 
   // useEffect(() => {
   //   socketio.on("chat", (senderChats) => {
-  //     setChats(senderChats);
+  //     setMessages(senderChats);
   //   });
   // });
 
@@ -56,7 +58,7 @@ export default function ChatContainer() {
   //     querySnapshot.forEach((doc) => {
   //       fireChats.push(doc.data());
   //     });
-  //     setChats([...fireChats]);
+  //     setMessages([...fireChats]);
   //   });
   //   return () => {
   //     unsub();
@@ -81,13 +83,41 @@ export default function ChatContainer() {
     // socketio.emit("chat", chat);
   }
 
-  function addMessage(chat) {
-    console.log(`test 01 ${chat}`);
+  const loadConversations = useCallback(async () => {
+    const convId = Utils.getConvId(user.senderPhone, user.receiverPhone);
 
-    const newChat = { ...chat, user: user, avatar };
-    // addToFirrebase(chat);
-    setChats([...chats, newChat]);
-    // sendChatToSocket([...chats, newChat]);
+    const conversation = await axios({
+      method: "get",
+      url: `http://localhost:3001/conversations/${convId}`,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    setMessages([...conversation.data]);
+  }, [user.receiverPhone, user.senderPhone]);
+
+  async function addMessage(chat) {
+    if (!chat) return;
+
+    //
+    const response = await axios({
+      method: "post",
+      url: `http://localhost:3001/message`,
+      data: {
+        to: user.receiverPhone,
+        text: chat.message,
+      },
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    await loadConversations();
+
+    // // addToFirrebase(chat);
+    // setChats([...messages, newChat]);
+    // // sendChatToSocket([...messages, newChat]);
   }
 
   function logout() {
@@ -96,32 +126,43 @@ export default function ChatContainer() {
     setUser("");
   }
 
+  const refresh = useCallback(async () => {
+    await loadConversations();
+  }, [loadConversations]);
+
   function ChatsList() {
     return (
       <div style={{ height: "75vh", overflow: "scroll", overflowX: "hidden" }}>
-        {chats.map((chat, index) => {
-          if (chat.user === user)
+        {messages &&
+          messages.map((message, index) => {
+            console.log(message.message_text);
+
+            if (message.sender_id === user.senderPhone)
+              return (
+                <ChatBoxSender
+                  key={index}
+                  message={message.message_text}
+                  avatar={avatar}
+                  user={message.sender_id}
+                />
+              );
             return (
-              <ChatBoxSender
+              <ChatBoxReciever
                 key={index}
-                message={chat.message}
-                avatar={chat.avatar}
-                user={chat.user.senderPhone}
+                message={message.message_text}
+                avatar={avatar}
+                user={message.receiver_id}
               />
             );
-          return (
-            <ChatBoxReciever
-              key={index}
-              message={chat.message}
-              avatar={chat.avatar}
-              user={chat.user.receiverPhone}
-            />
-          );
-        })}
+          })}
         <div ref={messagesEndRef} />
       </div>
     );
   }
+
+  useEffect(() => {
+    loadConversations();
+  }, [loadConversations]);
 
   return (
     <div>
@@ -143,6 +184,12 @@ export default function ChatContainer() {
               </a>
             </strong>
             <p
+              onClick={() => refresh()}
+              style={{ color: "blue", cursor: "pointer" }}
+            >
+              Refresh
+            </p>
+            <p
               onClick={() => logout()}
               style={{ color: "blue", cursor: "pointer" }}
             >
@@ -154,7 +201,7 @@ export default function ChatContainer() {
           <InputText addMessage={addMessage} />
         </div>
       ) : (
-        <UserLogin setUser={setUser} />
+        <UserLogin setUserCallback={setUser} />
       )}
 
       {/* <div style={{ margin: 10, display: "flex", justifyContent: "center" }}>

@@ -27,8 +27,6 @@ const styles = {
 };
 
 export default function InputText({ addMessage }) {
-  console.log(`test 02 ${addMessage}`);
-
   const [message, setMessage] = useState("");
 
   function addAMessage() {

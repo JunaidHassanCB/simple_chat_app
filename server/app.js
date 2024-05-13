@@ -6,11 +6,22 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const axios = require("axios");
+const cors = require("cors");
+
 const Utils = require("./utils/utils.js");
 
 require("dotenv").config();
 
 const app = express();
+
+app.use(
+  cors({
+    origin: "*", // or '*' for all domains
+    // methods: ["GET", "POST", "OPTIONS"], // Methods allowed
+    methods: "*",
+    allowedHeaders: ["Content-Type", "Authorization"], // Headers allowed
+  })
+);
 
 // Tell express to use the body-parser middleware and to not parse extended bodies
 app.use(bodyParser.json());
@@ -50,8 +61,14 @@ app.get("/", (req, res) => {
 });
 
 // This returns a database of conversations
-app.get("/conversations", (req, res) => {
-  res.status(200).json(conversations);
+app.get("/conversations/:id", (req, res) => {
+  const { id } = req.params;
+
+  if (!conversations[id]) {
+    res.status(200).json([]);
+  }
+
+  res.status(200).json(conversations[id]);
 });
 
 // Initiate conversation with a template message
@@ -211,7 +228,7 @@ app.post("/webhook", customParser, (req, res) => {
     const message_array = body?.entry[0]?.changes[0]?.value?.messages;
 
     // This checks if the message_array is not empty which can mean the user is sending messages
-    if (message_array) {
+    if (message_array && message_array.length > 0) {
       const message = message_array[0];
 
       const message_text = message?.text?.body;
