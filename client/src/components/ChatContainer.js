@@ -47,6 +47,8 @@ export default function ChatContainer() {
           "Content-Type": "application/json",
         },
       });
+
+      await loadConversations();
     }
   }, [user.receiverPhone, user.senderPhone]);
 
