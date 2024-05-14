@@ -1,6 +1,6 @@
 class Utils {
   static getCitrusBitsUtilTemplate(headerValues, bodyValues) {
-    const result = `Hello ${headerValues[0]}\nThis is ${bodyValues[1]} on behalf of ${bodyValues[2]}, likes to greet you on your ${bodyValues[3]}\n#Citrusbits #Welcome\nCitrusbits`;
+    const result = `Hello ${headerValues[0]}\nThis is ${bodyValues[0]} on behalf of ${bodyValues[1]}, likes to greet you on your ${bodyValues[2]}\n#Citrusbits #Welcome\nCitrusbits`;
     return result;
   }
 

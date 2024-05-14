@@ -9,6 +9,7 @@ import Utils from "../utils/utils.js";
 export default function ChatContainer() {
   // let socketio = socketIOClient("http://localhost:5001");
   const [messages, setMessages] = useState([]);
+  console.log(localStorage.getItem("user"));
   const [user, setUser] = useState(localStorage.getItem("user"));
   const avatarLeft = localStorage.getItem("avatarLeft");
   const avatarRight = localStorage.getItem("avatarRight");
@@ -41,8 +42,8 @@ export default function ChatContainer() {
         data: {
           to: user.receiverPhone,
           templateName: "citrus_bits_util",
-          headerValues: ["Obi Wan Kenobi"],
-          bodyValues: ["General Grievous", "the Empire", "demise"],
+          headerValues: ["ABC"],
+          bodyValues: ["XYZ", "Citrusbits", "onboarding"],
         },
         headers: {
           "Content-Type": "application/json",
@@ -51,7 +52,7 @@ export default function ChatContainer() {
 
       await loadConversations();
     }
-  }, [user.receiverPhone, user.senderPhone]);
+  }, [user]);
 
   async function addMessage(chat) {
     if (!chat) return;
@@ -121,7 +122,7 @@ export default function ChatContainer() {
 
   return (
     <div>
-      {user.receiverPhone ? (
+      {user && user.receiverPhone ? (
         <div>
           <div
             style={{
